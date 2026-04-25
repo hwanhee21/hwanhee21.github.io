@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>그외 공부한 것들</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            padding: 40px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            max-width: 600px;
+            width: 100%;
+            animation: fadeIn 0.8s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 28px;
+            text-align: center;
+            background: -webkit-linear-gradient(#43e97b, #38f9d7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: #ccc;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .study-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .study-card {
+            background: rgba(0, 0, 0, 0.25);
+            padding: 20px;
+            border-radius: 16px;
+            border-left: 4px solid #43e97b;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .study-card:nth-child(2) {
+            border-left-color: #38f9d7;
+        }
+
+        .study-card:nth-child(3) {
+            border-left-color: #4facfe;
+        }
+
+        .study-card:hover {
+            transform: translateX(5px);
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        .study-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .study-desc {
+            font-size: 14px;
+            color: #ddd;
+            line-height: 1.6;
+        }
+
+        .back-btn {
+            display: block;
+            margin: 30px auto 0;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            font-size: 15px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>그외 공부한 것들 📚</h1>
+        <p class="subtitle">제가 추가로 학습하고 익힌 기술들을 소개합니다.</p>
+
+        <div class="study-list">
+            <!-- 1. 나노바나나 활용방법 -->
+            <div class="study-card">
+                <div class="study-title">🍌 나노바나나 활용방법</div>
+                <div class="study-desc">
+                    나노바나나를 활용하여 효율적인 작업 파이프라인을 구축하는 방법을 배웠습니다. 이를 통해 복잡한 프로세스를 간소화하고 자동화된 도구들을 더 잘 다룰 수 있게 되었습니다.
+                </div>
+            </div>
+
+            <!-- 2. 캔버스기능 -->
+            <div class="study-card">
+                <div class="study-title">🎨 캔버스 기능</div>
+                <div class="study-desc">
+                    HTML5 Canvas의 강력한 드로잉 API를 공부했습니다. JavaScript를 사용하여 동적인 그래픽을 렌더링하고, 게임이나 시각화 도구에 필요한 커스텀 UI를 그리는 방법을 익혔습니다.
+                </div>
+            </div>
+
+            <!-- 3. 딥리서치 기능 -->
+            <div class="study-card">
+                <div class="study-title">🔍 딥리서치 기능</div>
+                <div class="study-desc">
+                    AI와 다양한 도구를 활용해 심도 있는 정보를 탐색하고 분석하는 딥리서치(Deep Research) 기능을 연구했습니다. 방대한 데이터 속에서 필요한 지식을 빠르고 정확하게 찾아내는 능력을 길렀습니다.
+                </div>
+            </div>
+        </div>
+
+        <button class="back-btn" onclick="window.location.href='index.html'">메인으로 돌아가기</button>
+    </div>
+
+</body>
+</html>

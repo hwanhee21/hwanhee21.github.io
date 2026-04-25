@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>곤충 대전쟁</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #222;
+            color: #fff;
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            margin-top: 30px;
+            margin-bottom: 20px;
+            font-size: 36px;
+            color: #ffeb3b;
+            text-shadow: 2px 2px 4px #000;
+            letter-spacing: 2px;
+        }
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 800px;
+        }
+        .screen.active {
+            display: flex;
+        }
+        
+        .menu-box {
+            background-color: #333;
+            border: 4px solid #555;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .menu-grid {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .top-info {
+            width: 100%;
+            background-color: #222;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: gold;
+            border: 2px solid #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            background-color: #333;
+            border: 4px solid #555;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        canvas { display: block; }
+        
+        #ui-panel {
+            width: 800px;
+            display: flex;
+            flex-direction: column;
+            background-color: #444;
+            padding: 15px 20px;
+            box-sizing: border-box;
+            border-radius: 0 0 10px 10px;
+            border: 4px solid #555;
+            border-top: none;
+            margin-bottom: 30px;
+            gap: 15px;
+        }
+        .ui-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .money-display {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 1px 1px 2px #000;
+            white-space: nowrap;
+        }
+        
+        #spawn-btn-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .btn {
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            background-color: #4CAF50;
+        }
+        .btn:hover:not(:disabled) {
+            background-color: #388E3C;
+        }
+        .btn:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .btn:disabled {
+            background-color: #555 !important;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-blue { background-color: #2196F3; }
+        .btn-blue:hover:not(:disabled) { background-color: #1976D2; }
+        .btn-purple { background-color: #9C27B0; }
+        .btn-purple:hover:not(:disabled) { background-color: #7B1FA2; }
+        .btn-gray { background-color: #777; font-size: 16px; padding: 10px 20px;}
+        .btn-gray:hover { background-color: #555; }
+        .ui-btn { padding: 8px 16px; font-size: 16px; width: 100%; box-sizing: border-box; } 
+
+        #game-result-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        #result-title {
+            font-size: 60px;
+            margin: 0 0 10px 0;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        #result-desc {
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        .item-card {
+            background: #444;
+            border: 2px solid #666;
+            border-radius: 10px;
+            padding: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        .item-info {
+            text-align: left;
+        }
+        .item-name {
+            font-size: 24px; font-weight: bold; margin-bottom: 5px; color: #fff;
+        }
+        .item-level {
+            font-size: 16px; color: #aaa;
+        }
+        #upgrade-list-container {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+            padding-right: 10px;
+        }
+        #upgrade-list-container::-webkit-scrollbar { width: 8px; }
+        #upgrade-list-container::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        #upgrade-list-container::-webkit-scrollbar-track { background: #333; }
+        
+        .floating-money { /* 돈 드랍 이펙트를 위한 추후 대비용 클래스 */ }
+    </style>
+</head>
+<body>
+
+    <h1>곤충 대전쟁</h1>
+
+    <!-- 1. 시작 화면 -->
+    <div id="start-screen" class="screen active">
+        <div class="menu-box">
+            <h2 style="font-size: 44px; margin-top: 0; color: #4CAF50;">메인 메뉴</h2>
+            <div class="top-info">
+                <span>보유 경험치(골드): <span id="account-gold-display">0</span>G</span>
+                <button id="btn-reset-data" class="btn btn-gray" style="background:#d32f2f;">데이터 초기화</button>
+            </div>
+            <div class="menu-grid">
+                <button id="btn-go-stage" class="btn btn-blue">전투(스테이지)</button>
+                <button id="btn-go-upgrade" class="btn btn-purple">파워업 (진화)</button>
+                <button id="btn-go-gacha" class="btn" style="background:#ff9800;">캐릭터 획득</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 파워업 화면 -->
+    <div id="upgrade-screen" class="screen">
+        <div class="menu-box">
+            <div class="top-info">
+                <span>보유 경험치: <span id="upg-gold-display">0</span>G</span>
+                <button class="btn btn-gray btn-back-main">메인으로</button>
+            </div>
+            <h2 style="font-size: 30px; margin-top:0;">캐릭터 파워업</h2>
+            <div id="upgrade-list-container">
+                <!-- 동적으로 채워짐 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 캐릭터 획득(가챠) 화면 -->
+    <div id="gacha-screen" class="screen">
+        <div class="menu-box">
+            <div class="top-info">
+                <span>보유 경험치: <span id="gacha-gold-display">0</span>G</span>
+                <button class="btn btn-gray btn-back-main">메인으로</button>
+            </div>
+            <h2 style="font-size: 30px;">캐릭터 뽑기</h2>
+            <p style="color: #ccc; margin-bottom: 20px;">100G를 소모하여 강력한 등급의 아군을 획득하세요!</p>
+            <p style="font-size:14px; color:#aaa;">확률: 바퀴벌레(1%), 사슴벌레(19%), 딱정벌레(30%), 공벌레(50%)</p>
+            <button id="btn-gacha-pull" class="btn" style="background:#ff9800; padding:20px 40px; font-size: 24px; margin-top:10px;">뽑기 (100G)</button>
+            <div id="gacha-result" style="margin-top: 30px; font-size: 24px; color: #00ff00; font-weight: bold; height:50px;">
+                <!-- 뽑기 결과 표시 역 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. 스테이지 선택 화면 -->
+    <div id="stage-screen" class="screen">
+        <div class="menu-box">
+            <div class="top-info">
+                <span>스테이지 선택</span>
+                <button class="btn btn-gray btn-back-main">메인으로</button>
+            </div>
+            <div id="stage-list" style="margin-top:0; display:flex; flex-direction:column; gap:15px;">
+                <button class="btn stage-btn" data-stage="1">스테이지 1</button>
+                <button class="btn stage-btn" data-stage="2" disabled>스테이지 2 (잠김)</button>
+                <button class="btn stage-btn" data-stage="3" disabled>스테이지 3 (잠김)</button>
+                <button class="btn stage-btn" data-stage="4" disabled>스테이지 4 (잠김)</button>
+                <button class="btn stage-btn" data-stage="5" disabled>스테이지 5 (잠김)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. 게임 화면 -->
+    <div id="game-screen" class="screen">
+        <div id="game-container">
+            <canvas id="gameCanvas" width="800" height="400"></canvas>
+            
+            <div id="game-result-overlay" style="display: none;">
+                <h2 id="result-title">승리!</h2>
+                <p id="result-desc"></p>
+                <p id="result-reward" style="color: gold; font-size:20px; font-weight:bold; margin-bottom:20px;"></p>
+                <button id="btn-to-stage" class="btn">확인 (스테이지로)</button>
+            </div>
+        </div>
+        <div id="ui-panel">
+            <div class="ui-top-row">
+                <div class="money-display">💰 <span id="money">0</span> / <span id="max-money">500</span></div>
+            </div>
+            <div id="spawn-btn-container">
+                <!-- 자바스크립트에 의해 동적으로 버튼들이 렌더링됨 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 데이터 구조: 유닛 DB ---
+        const UNIT_DB = {
+            ant: { name: "개미", rarity: "기본", baseHp: 150, hpRate: 20, baseDmg: 15, dmgRate: 3, speed: 2, range: 40, cost: 50, cd: 180, upgCost: 50, color: '#8B4513' },
+            pillbug: { name: "공벌레", rarity: "일반", baseHp: 250, hpRate: 40, baseDmg: 10, dmgRate: 2, speed: 1.2, range: 35, cost: 70, cd: 240, upgCost: 50, color: '#888' },
+            beetle: { name: "딱정벌레", rarity: "희귀", baseHp: 300, hpRate: 50, baseDmg: 30, dmgRate: 6, speed: 1.5, range: 40, cost: 150, cd: 360, upgCost: 100, color: '#B30000' },
+            stagBeetle: { name: "사슴벌레", rarity: "에픽", baseHp: 200, hpRate: 35, baseDmg: 60, dmgRate: 15, speed: 2, range: 50, cost: 300, cd: 480, upgCost: 200, color: '#4A2A00' },
+            cockroach: { name: "바퀴벌레", rarity: "전설", baseHp: 400, hpRate: 80, baseDmg: 40, dmgRate: 10, speed: 3.5, range: 40, cost: 600, cd: 900, upgCost: 500, color: '#3E2723' },
+        };
+
+        // --- 계정(저장 정보) ---
+        let account = {
+            gold: 100, 
+            units: { ant: 1, pillbug: 0, beetle: 0, stagBeetle: 0, cockroach: 0 },
+            unitLevels: { ant: 1, pillbug: 1, beetle: 1, stagBeetle: 1, cockroach: 1 }
+        };
+        let maxUnlockedStage = 1;
+
+        function saveGame() {
+            localStorage.setItem('bugWarSave', JSON.stringify({ account, maxUnlockedStage }));
+        }
+
+        function loadGame() {
+            let saved = localStorage.getItem('bugWarSave');
+            if(saved) {
+                try {
+                    let data = JSON.parse(saved);
+                    account = data.account;
+                    maxUnlockedStage = data.maxUnlockedStage;
+                }catch(e) { console.error("Save load error", e); }
+            }
+        }
+
+        document.getElementById('btn-reset-data').addEventListener('click', () => {
+            if(confirm("모든 저장 데이터를 삭제하고 처음부터 다시 시작하시겠습니까?")) {
+                localStorage.removeItem('bugWarSave');
+                location.reload();
+            }
+        });
+
+        // --- 화면 전환 ---
+        const screens = {
+            main: document.getElementById('start-screen'),
+            upgrade: document.getElementById('upgrade-screen'),
+            gacha: document.getElementById('gacha-screen'),
+            stage: document.getElementById('stage-screen'),
+            game: document.getElementById('game-screen')
+        };
+        const resultOverlay = document.getElementById('game-result-overlay');
+        
+        function showScreen(screenEl) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screenEl.classList.add('active');
+            updateTopDisplay();
+        }
+
+        function updateTopDisplay() {
+            saveGame(); 
+
+            document.getElementById('account-gold-display').innerText = account.gold;
+            document.getElementById('upg-gold-display').innerText = account.gold;
+            document.getElementById('gacha-gold-display').innerText = account.gold;
+
+            document.getElementById('btn-gacha-pull').disabled = account.gold < 100;
+
+            const upgList = document.getElementById('upgrade-list-container');
+            upgList.innerHTML = '';
+
+            ['ant', 'pillbug', 'beetle', 'stagBeetle', 'cockroach'].forEach(k => {
+                if (account.units[k] > 0) {
+                    let lvl = account.unitLevels[k];
+                    let db = UNIT_DB[k];
+                    
+                    let isPoison = (k === 'ant' && lvl >= 10);
+                    let title = isPoison ? "☠️ 독개미" : db.name;
+                    let rarityColor = db.rarity === '전설' ? 'gold' : (db.rarity === '에픽' ? '#b28dff' : (db.rarity === '희귀' ? '#66b2ff' : '#ddd'));
+                    let desc = isPoison ? "특수: 공격 시 적을 중독!" : (k==='ant' ? "10레벨 시 '독개미' 진화" : `수집 완료: ${account.units[k]}마리 보유 중`);
+                    
+                    let cost = lvl * db.upgCost;
+
+                    let card = document.createElement('div');
+                    card.className = 'item-card';
+                    card.innerHTML = `
+                        <div class="item-info">
+                            <div class="item-name">${title} <span style="font-size:16px; color:${rarityColor};">[${db.rarity}]</span></div>
+                            <div class="item-level">Lv ${lvl} : 체력 ${Math.floor(db.baseHp + lvl*db.hpRate)} / 공격력 ${Math.floor(db.baseDmg + lvl*db.dmgRate)}</div>
+                            <div style="font-size:14px; color:cyan; margin-top:5px;">${desc}</div>
+                        </div>
+                        <div>
+                            <button class="btn upg-btn" data-key="${k}" data-cost="${cost}">강화 (${cost}G)</button>
+                        </div>
+                    `;
+                    upgList.appendChild(card);
+                }
+            });
+
+            document.querySelectorAll('.upg-btn').forEach(btn => {
+                let c = parseInt(btn.getAttribute('data-cost'));
+                btn.disabled = account.gold < c;
+                btn.addEventListener('click', () => {
+                    let k = btn.getAttribute('data-key');
+                    if (account.gold >= c) {
+                        account.gold -= c;
+                        account.unitLevels[k]++;
+                        updateTopDisplay();
+                    }
+                });
+            });
+        }
+
+        document.querySelectorAll('.btn-back-main').forEach(b => {
+            b.addEventListener('click', () => { showScreen(screens.main); });
+        });
+        document.getElementById('btn-go-stage').addEventListener('click', () => {
+            showScreen(screens.stage); updateStageButtons();
+        });
+        document.getElementById('btn-go-upgrade').addEventListener('click', () => { showScreen(screens.upgrade); });
+        document.getElementById('btn-go-gacha').addEventListener('click', () => {
+            document.getElementById('gacha-result').innerText = "";
+            showScreen(screens.gacha);
+        });
+
+        document.getElementById('btn-gacha-pull').addEventListener('click', () => {
+            if (account.gold >= 100) {
+                account.gold -= 100;
+                let r = Math.random();
+                let resText = "";
+                
+                if (r < 0.01) {
+                    account.units.cockroach++;
+                    resText = "✨ 전설(1%) 영웅 획득: [바퀴벌레]!";
+                } else if (r < 0.20) {
+                    account.units.stagBeetle++;
+                    resText = "🎉 에픽(19%) 영웅 획득: [사슴벌레]!";
+                } else if (r < 0.50) {
+                    account.units.beetle++;
+                    resText = "🛡️ 희귀(30%) 영웅 획득: [딱정벌레]!";
+                } else {
+                    account.units.pillbug++;
+                    resText = "📦 일반(50%) 영웅 획득: [공벌레]!";
+                }
+                
+                let invText = `(보유: 공벌레 ${account.units.pillbug}, 딱정벌레 ${account.units.beetle}, 사슴벌레 ${account.units.stagBeetle}, 바퀴벌레 ${account.units.cockroach})`;
+                document.getElementById('gacha-result').innerHTML = resText + "<br><span style='font-size:16px; color:#aaa;'>" + invText + "</span>";
+
+                updateTopDisplay(); 
+            }
+        });
+
+        document.getElementById('btn-to-stage').addEventListener('click', () => {
+            showScreen(screens.stage);
+            updateStageButtons();
+        });
+
+        const stageButtons = document.querySelectorAll('.stage-btn');
+        function updateStageButtons() {
+            stageButtons.forEach(btn => {
+                const s = parseInt(btn.getAttribute('data-stage'));
+                if (s <= maxUnlockedStage) {
+                    btn.disabled = false;
+                    btn.innerText = `스테이지 ${s}`;
+                } else {
+                    btn.disabled = true;
+                    btn.innerText = `스테이지 ${s} (잠김)`;
+                }
+            });
+        }
+        stageButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                let stage = parseInt(btn.getAttribute('data-stage'));
+                if (stage <= maxUnlockedStage) {
+                    initGame(stage);
+                    showScreen(screens.game);
+                }
+            });
+        });
+
+        // ================= 게임 엔진 =================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let money = 0;
+        let maxMoney = 500;
+        let moneyRate = 1; 
+        let walletLevel = 1;
+        let gameState = 'waiting'; 
+        let currentStage = 1;
+
+        let baseLeft = { hp: 1000, maxHp: 1000, x: 50, y: 220, width: 80, height: 130, team: 1 };
+        let baseRight = { hp: 1000, maxHp: 1000, x: 670, y: 220, width: 80, height: 130, team: 2 };
+
+        let entities = [];
+        let enemySpawnTimer = 0;
+        let spawnInterval = 180;
+        let currentSpiderHp = 80;
+        let currentSpiderDmg = 10;
+        
+        let activeCooldowns = {};
+        let bossSpawned = false; // 보스 등장 여부 체크 버프
+
+        const spawnBtnContainer = document.getElementById('spawn-btn-container');
+
+        function initGame(stage) {
+            currentStage = stage;
+            money = 0;
+            maxMoney = 500;
+            moneyRate = 1 + Math.max(0, (stage - 1) * 0.2); 
+            walletLevel = 1;
+            gameState = 'playing';
+            bossSpawned = false; // 보스초기화
+            
+            entities = [];
+            enemySpawnTimer = 0;
+
+            ['ant', 'pillbug', 'beetle', 'stagBeetle', 'cockroach'].forEach(k => {
+                activeCooldowns[k] = 0;
+            });
+
+            baseRight.maxHp = 1000 * Math.pow(1.5, stage - 1); 
+            baseRight.hp = baseRight.maxHp;
+            
+            baseLeft.maxHp = 1000;
+            baseLeft.hp = 1000;
+
+            spawnInterval = Math.max(60, 180 - (stage - 1) * 30);
+            currentSpiderHp = 80 + (stage - 1) * 40;
+            currentSpiderDmg = 10 + (stage - 1) * 5;
+
+            resultOverlay.style.display = 'none';
+
+            spawnBtnContainer.innerHTML = '';
+            
+            let btnW = document.createElement('button');
+            btnW.id = 'inner-upg-wallet';
+            btnW.className = 'btn ui-btn btn-blue';
+            btnW.innerHTML = `지갑 확장(<span id="inner-upg-cost">100</span>)`;
+            btnW.onclick = () => {
+                let cost = walletLevel * 100;
+                if (money >= cost && gameState === 'playing') {
+                    money -= cost;
+                    walletLevel++;
+                    maxMoney += 200;
+                    moneyRate += 0.8;
+                }
+            };
+            spawnBtnContainer.appendChild(btnW);
+
+            ['ant', 'pillbug', 'beetle', 'stagBeetle', 'cockroach'].forEach(k => {
+                if (account.units[k] > 0) {
+                    let db = UNIT_DB[k];
+                    let btn = document.createElement('button');
+                    btn.className = 'btn ui-btn unit-spawn-btn';
+                    btn.setAttribute('data-key', k);
+                    
+                    btn.onclick = () => {
+                        if (money >= db.cost && activeCooldowns[k] <= 0 && gameState === 'playing') {
+                            money -= db.cost;
+                            spawnUnit(1, k);
+                            activeCooldowns[k] = db.cd; 
+                        }
+                    };
+                    spawnBtnContainer.appendChild(btn);
+                }
+            });
+        }
+
+        function showBattleResult(isWin) {
+            gameState = isWin ? 'win' : 'lose';
+            resultOverlay.style.display = 'flex';
+            
+            if (isWin) {
+                document.getElementById('result-title').innerText = '🏆 승리! 🏆';
+                document.getElementById('result-title').style.color = 'gold';
+                document.getElementById('result-desc').innerText = `스테이지 ${currentStage} 클리어!`;
+                
+                let earnGold = currentStage * 100;
+                account.gold += earnGold;
+                document.getElementById('result-reward').innerText = `보상 획득: ${earnGold}G`;
+
+                if (currentStage === maxUnlockedStage && maxUnlockedStage < stageButtons.length) {
+                    maxUnlockedStage++;
+                }
+                
+                updateTopDisplay();
+            } else {
+                document.getElementById('result-title').innerText = '💀 패배...';
+                document.getElementById('result-title').style.color = 'red';
+                document.getElementById('result-desc').innerText = `아군의 기지가 파괴되었습니다...`;
+                document.getElementById('result-reward').innerText = `보상 획득: 10G (위로금)`;
+                
+                account.gold += 10;
+                updateTopDisplay();
+            }
+        }
+
+        function spawnUnit(team, type) {
+            let unit = {};
+            if (team === 1) {
+                let lvl = account.unitLevels[type];
+                let db = UNIT_DB[type];
+                let isPoison = (type === 'ant' && lvl >= 10);
+                
+                unit = {
+                    team: 1, type: type, isPoison: isPoison,
+                    x: baseLeft.x + baseLeft.width, y: 310 + (Math.random() * 20 - 10),
+                    width: 30, height: 20,
+                    hp: db.baseHp + (lvl * db.hpRate), maxHp: db.baseHp + (lvl * db.hpRate),
+                    damage: db.baseDmg + (lvl * db.dmgRate), speed: db.speed,
+                    attackRange: db.range, attackCooldown: 40, currentCooldown: 0,
+                    color: isPoison ? '#2E8B57' : db.color
+                };
+            } else if (team === 2) {
+                if (type === 'spider') {
+                    unit = {
+                        team: 2, type: 'spider',
+                        x: baseRight.x - 40, y: 300 + (Math.random() * 20 - 10),
+                        width: 40, height: 30,
+                        hp: currentSpiderHp, maxHp: currentSpiderHp,
+                        damage: currentSpiderDmg, speed: -1.5,
+                        attackRange: 40, attackCooldown: 50, currentCooldown: 0,
+                        color: '#4B0082', poisonTimer: 0 
+                    };
+                } else if (type === 'tarantula') {
+                    // 타란툴라는 거미보다 더 크고 강한 적 개체 (밸런스 패치로 능력치 소폭 하향)
+                    unit = {
+                        team: 2, type: 'tarantula',
+                        x: baseRight.x - 60, y: 300 + (Math.random() * 20 - 10),
+                        width: 60, height: 45,
+                        hp: currentSpiderHp * 1.8, maxHp: currentSpiderHp * 1.8,
+                        damage: currentSpiderDmg * 1.8, speed: -1.0,
+                        attackRange: 45, attackCooldown: 70, currentCooldown: 0,
+                        color: '#2b1b17', poisonTimer: 0 
+                    };
+                }
+            }
+            entities.push(unit);
+        }
+
+        function update() {
+            if (gameState !== 'playing') return;
+
+            // --- 보스 출현 및 넉백 기믹 (적성 체력 50% 이하 돌파 시 1회 발동) ---
+            if (currentStage >= 3 && !bossSpawned && baseRight.hp <= (baseRight.maxHp * 0.5)) {
+                bossSpawned = true;
+                
+                // 타란툴라 강제 등장! (충격파 연출 효과는 넉백으로 대체)
+                spawnUnit(2, 'tarantula');
+                
+                // 아군 전체 강제 넉백 (초기화)
+                for (let i = 0; i < entities.length; i++) {
+                    if (entities[i].team === 1 && entities[i].hp > 0) {
+                        // 뒤로 크게 밀어냄
+                        entities[i].x -= 200;
+                        // 기지 바깥으로 튕겨나가는 것을 방지
+                        if (entities[i].x < baseLeft.x + baseLeft.width) {
+                            entities[i].x = baseLeft.x + baseLeft.width + Math.random() * 30;
+                        }
+                    }
+                }
+            }
+            // -------------------------------------------------------------
+
+            money += moneyRate / 6; 
+            if (money > maxMoney) money = maxMoney;
+            document.getElementById('money').innerText = Math.floor(money);
+            document.getElementById('max-money').innerText = maxMoney;
+
+            const upgWalletBtn = document.getElementById('inner-upg-wallet');
+            if(upgWalletBtn) {
+                let wCost = walletLevel * 100;
+                document.getElementById('inner-upg-cost').innerText = wCost;
+                upgWalletBtn.disabled = money < wCost;
+            }
+
+            for (let k in activeCooldowns) {
+                if (activeCooldowns[k] > 0) activeCooldowns[k]--;
+            }
+
+            document.querySelectorAll('.unit-spawn-btn').forEach(btn => {
+                let k = btn.getAttribute('data-key');
+                let cd = activeCooldowns[k];
+                let db = UNIT_DB[k];
+                let cost = db.cost;
+                
+                let isPoison = (k === 'ant' && account.unitLevels.ant >= 10);
+                let title = isPoison ? "☠️ 독개미" : db.name;
+
+                if (cd > 0) {
+                    btn.disabled = true;
+                    let sec = Math.ceil(cd / 60);
+                    btn.innerHTML = `⏳${sec}초 (${cost})`;
+                } else {
+                    btn.disabled = money < cost;
+                    btn.innerHTML = `${title} (${cost})`;
+                }
+            });
+
+            enemySpawnTimer++;
+            if (enemySpawnTimer > spawnInterval) {
+                let eType = 'spider';
+                // 거미 스폰 중 일정 확률로 타란툴라도 추가 합류 (보스 등장 이후에만 나오도록 해 난이도 조절)
+                if (currentStage >= 3 && bossSpawned && Math.random() < 0.2) {
+                    eType = 'tarantula';
+                }
+                spawnUnit(2, eType);
+                enemySpawnTimer = 0;
+            }
+
+            for (let i = 0; i < entities.length; i++) {
+                let e = entities[i];
+                if (e.hp <= 0) continue;
+                if (e.currentCooldown > 0) e.currentCooldown--;
+
+                if (e.poisonTimer && e.poisonTimer > 0) {
+                    if (e.poisonTimer % 60 === 0) e.hp -= 10;
+                    e.poisonTimer--;
+                }
+
+                let target = null;
+                let targetDist = Infinity;
+
+                for (let j = 0; j < entities.length; j++) {
+                    if (i === j) continue;
+                    let other = entities[j];
+                    if (other.hp > 0 && other.team !== e.team) {
+                        let dist = (e.team === 1) ? (other.x - (e.x + e.width)) : (e.x - (other.x + other.width));
+                        if (dist >= 0 && dist < targetDist) {
+                            target = other; targetDist = dist;
+                        }
+                    }
+                }
+
+                let enemyBase = (e.team === 1) ? baseRight : baseLeft;
+                let baseDist = (e.team === 1) ? (enemyBase.x - (e.x + e.width)) : (e.x - (enemyBase.x + enemyBase.width));
+                if (baseDist >= 0 && baseDist < targetDist) {
+                    target = enemyBase; targetDist = baseDist;
+                }
+
+                if (targetDist <= e.attackRange) {
+                    if (e.currentCooldown <= 0) {
+                        target.hp -= e.damage;
+                        if (e.isPoison && target.team === 2) target.poisonTimer = 180;
+                        e.currentCooldown = e.attackCooldown;
+                        
+                        if (baseLeft.hp <= 0 && gameState === 'playing') showBattleResult(false);
+                        if (baseRight.hp <= 0 && gameState === 'playing') showBattleResult(true);
+                    }
+                } else {
+                    e.x += e.speed;
+                }
+            }
+            
+            // 사망 처리 및 돈 보상 지급
+            for (let i = entities.length - 1; i >= 0; i--) {
+                if (entities[i].hp <= 0) {
+                    if (entities[i].team === 2) {
+                        if (entities[i].type === 'spider') {
+                            money += 100;
+                        } else if (entities[i].type === 'tarantula') {
+                            money += 300;
+                        }
+                    }
+                    entities.splice(i, 1);
+                }
+            }
+        }
+
+        function render() {
+            if (gameState === 'waiting') return; 
+
+            let grad = ctx.createLinearGradient(0, 0, 0, 250);
+            grad.addColorStop(0, "#87CEEB"); grad.addColorStop(1, "#E0F6FF");
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, 250);
+            ctx.fillStyle = '#654321'; ctx.fillRect(0, 250, canvas.width, 150);
+            ctx.fillStyle = '#3CB371'; ctx.fillRect(0, 250, canvas.width, 20);
+
+            ctx.fillStyle = '#A9A9A9'; ctx.fillRect(baseLeft.x, baseLeft.y, baseLeft.width, baseLeft.height);
+            ctx.fillStyle = '#8B0000'; ctx.fillRect(baseRight.x, baseRight.y, baseRight.width, baseRight.height);
+
+            drawHpBar(baseLeft.x, baseLeft.y - 20, baseLeft.width, baseLeft.hp, baseLeft.maxHp);
+            drawHpBar(baseRight.x, baseRight.y - 20, baseRight.width, baseRight.hp, baseRight.maxHp);
+
+            for (let e of entities) {
+                ctx.save();
+                ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 5;
+                ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 3;
+
+                if (e.type === 'ant') drawAnt(e.x, e.y, e.color, e.isPoison);
+                else if (e.type === 'spider') drawSpider(e.x, e.y, e.poisonTimer > 0);
+                else if (e.type === 'tarantula') drawTarantula(e.x, e.y, e.poisonTimer > 0);
+                else if (e.type === 'pillbug') drawPillbug(e.x, e.y, e.color);
+                else if (e.type === 'beetle') drawBeetle(e.x, e.y, e.color);
+                else if (e.type === 'stagBeetle') drawStagBeetle(e.x, e.y, e.color);
+                else if (e.type === 'cockroach') drawCockroach(e.x, e.y, e.color);
+                
+                ctx.restore();
+                drawHpBar(e.x, e.y - 12, e.width, e.hp, e.maxHp, 5);
+            }
+        }
+
+        function drawHpBar(x, y, w, hp, maxHp, h = 10) {
+            ctx.fillStyle = '#ff0000'; ctx.fillRect(x, y, w, h);
+            ctx.fillStyle = '#00ff00'; ctx.fillRect(x, y, Math.max(0, w * (hp / maxHp)), h);
+        }
+
+        function drawAnt(x, y, color, isPoison) {
+            ctx.fillStyle = color; ctx.beginPath();
+            ctx.arc(x+25, y+10, 6, 0, Math.PI*2); ctx.arc(x+15, y+10, 5, 0, Math.PI*2); ctx.arc(x+5, y+10, 8, 0, Math.PI*2); ctx.fill();
+            if (isPoison) { ctx.fillStyle = 'lime'; ctx.beginPath(); ctx.arc(x+30, y+12, 3, 0, Math.PI*2); ctx.fill(); }
+            ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+            ctx.moveTo(x+15, y+10); ctx.lineTo(x+10, y+20); ctx.moveTo(x+15, y+10); ctx.lineTo(x+15, y+20); ctx.moveTo(x+15, y+10); ctx.lineTo(x+20, y+20); ctx.stroke();
+        }
+
+        function drawPillbug(x, y, c) {
+            ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(x+15, y+10, 12, 9, 0, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#222'; ctx.lineWidth = 2; ctx.beginPath();
+            ctx.moveTo(x+7, y+3); ctx.lineTo(x+7, y+17); ctx.moveTo(x+15, y+1); ctx.lineTo(x+15, y+19); ctx.moveTo(x+23, y+3); ctx.lineTo(x+23, y+17); ctx.stroke();
+        }
+
+        function drawBeetle(x, y, c) {
+            ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(x+15, y+10, 14, 10, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#111'; ctx.fillRect(x+25, y+7, 6, 6); ctx.fillRect(x+31, y+3, 2, 6); 
+        }
+
+        function drawStagBeetle(x, y, c) {
+            ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(x+15, y+10, 15, 8, 0, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = c; ctx.lineWidth = 3; ctx.beginPath();
+            ctx.moveTo(x+28, y+5); ctx.lineTo(x+40, y); ctx.lineTo(x+45, y+5);
+            ctx.moveTo(x+28, y+15); ctx.lineTo(x+40, y+20); ctx.lineTo(x+45, y+15); ctx.stroke();
+        }
+
+        function drawCockroach(x, y, c) {
+            ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(x+20, y+10, 18, 7, 0, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#111'; ctx.lineWidth=1; ctx.beginPath();
+            ctx.moveTo(x+38, y+8); ctx.lineTo(x+45, y); ctx.moveTo(x+38, y+12); ctx.lineTo(x+45, y+20); ctx.stroke();
+            ctx.beginPath(); for(let i=0; i<4; i++){ ctx.moveTo(x+8+(i*8), y+15); ctx.lineTo(x+5+(i*8), y+22); } ctx.stroke();
+        }
+
+        function drawSpider(x, y, isPoisoned) {
+            ctx.fillStyle = isPoisoned ? '#9ACD32' : '#4B0082'; ctx.beginPath();
+            ctx.arc(x+10, y+15, 6, 0, Math.PI*2); ctx.arc(x+25, y+15, 12, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = isPoisoned ? '#9ACD32' : '#4B0082'; ctx.lineWidth = 2; ctx.beginPath();
+            ctx.moveTo(x+20, y+15); ctx.lineTo(x+15, y+5); ctx.moveTo(x+22, y+15); ctx.lineTo(x+20, y+5);
+            ctx.moveTo(x+25, y+15); ctx.lineTo(x+30, y+5); ctx.moveTo(x+28, y+15); ctx.lineTo(x+35, y+5);
+            ctx.moveTo(x+20, y+15); ctx.lineTo(x+15, y+30); ctx.moveTo(x+22, y+15); ctx.lineTo(x+20, y+30);
+            ctx.moveTo(x+25, y+15); ctx.lineTo(x+30, y+30); ctx.moveTo(x+28, y+15); ctx.lineTo(x+35, y+30); ctx.stroke();
+            if (isPoisoned) { ctx.fillStyle = 'rgba(0, 255, 0, 0.6)'; ctx.beginPath(); ctx.arc(x+20, y-5, 4, 0, Math.PI*2); ctx.fill(); }
+        }
+
+        function drawTarantula(x, y, isPoisoned) {
+            ctx.fillStyle = isPoisoned ? '#9ACD32' : '#2C221B'; ctx.beginPath();
+            ctx.arc(x+15, y+20, 10, 0, Math.PI*2); ctx.arc(x+40, y+20, 18, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = isPoisoned ? '#9ACD32' : '#2C221B'; ctx.lineWidth = 4; ctx.beginPath();
+            ctx.moveTo(x+30, y+20); ctx.lineTo(x+20, y+5); ctx.moveTo(x+33, y+20); ctx.lineTo(x+25, y+5);
+            ctx.moveTo(x+38, y+20); ctx.lineTo(x+45, y+5); ctx.moveTo(x+41, y+20); ctx.lineTo(x+55, y+5);
+            ctx.moveTo(x+30, y+20); ctx.lineTo(x+20, y+40); ctx.moveTo(x+33, y+20); ctx.lineTo(x+25, y+40);
+            ctx.moveTo(x+38, y+20); ctx.lineTo(x+45, y+40); ctx.moveTo(x+41, y+20); ctx.lineTo(x+55, y+40); ctx.stroke();
+            if (isPoisoned) { ctx.fillStyle = 'rgba(0, 255, 0, 0.6)'; ctx.beginPath(); ctx.arc(x+25, y-5, 6, 0, Math.PI*2); ctx.fill(); }
+        }
+
+        function loop() { update(); render(); requestAnimationFrame(loop); }
+        
+        // --- 게임 구동 시작 ---
+        loadGame(); 
+        updateTopDisplay();
+        requestAnimationFrame(loop); 
+    </script>
+</body>
+</html>

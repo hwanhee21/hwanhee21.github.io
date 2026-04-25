@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>할리갈리</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #fdf2f8;
+            /* 연한 핑크색 배경 */
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+        }
+
+        .menu-container {
+            text-align: center;
+        }
+
+        .game-title {
+            font-size: 5rem;
+            color: #be123c;
+            margin-top: 0;
+            margin-bottom: 3rem;
+            text-shadow: 3px 3px 0px white, 5px 5px 0px rgba(190, 18, 60, 0.2);
+            font-weight: 900;
+        }
+
+        .start-btn {
+            font-size: 2.5rem;
+            padding: 15px 60px;
+            background-color: #be123c;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 10px 20px rgba(190, 18, 60, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .start-btn:hover {
+            background-color: #129f31;
+            transform: translateY(-4px);
+            box-shadow: 0 14px 28px rgba(190, 18, 60, 0.4);
+        }
+
+        .start-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 4px 10px rgba(190, 18, 60, 0.3);
+        }
+        
+        .difficulty-section {
+            margin-bottom: 2.5rem;
+            background-color: white;
+            padding: 25px 35px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+        }
+        .difficulty-title {
+            font-size: 1.4rem;
+            color: #be123c;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 800;
+        }
+        .diff-options {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        .diff-btn {
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            border: 2px solid #f1f5f9;
+            background-color: #f8fafc;
+            color: #64748b;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        .diff-btn:hover {
+            background-color: #f1f5f9;
+            border-color: #e2e8f0;
+            transform: translateY(-2px);
+        }
+        .diff-btn.selected {
+            background-color: #be123c;
+            color: white;
+            border-color: #be123c;
+            box-shadow: 0 6px 15px rgba(190, 18, 60, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* 메인화면 위 박스 효과 덮어쓰기 (카드 이펙트보다 앞에 오도록 설정) */
+        .menu-container {
+            position: relative;
+            z-index: 10; 
+        }
+
+        /* 떨어지는 카드 이펙트 CSS */
+        #card-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0; 
+        }
+
+        .falling-card {
+            position: absolute;
+            top: -150px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1), inset 0 0 0 3px #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 5px;
+            box-sizing: border-box;
+            animation: fall linear forwards;
+            opacity: 0.9;
+        }
+
+        .falling-card-inner {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: center;
+            width: 100%;
+            height: 100%;
+            line-height: 1.1;
+        }
+
+        @keyframes fall {
+            0% { 
+                top: -150px; 
+                transform: rotate(var(--start-rot, 0deg)); 
+            }
+            100% { 
+                top: 120vh; 
+                transform: rotate(var(--end-rot, 360deg)); 
+            }
+        }
+
+        /* ---------------------------------
+           게임 메인 화면 스타일
+        --------------------------------- */
+        #game-screen {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+            background-color: #2c3e50; /* 게임 뷰 배경은 어두운 톤으로 몰입감 상승 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 20; /* 메뉴 위에 띄우기 위함 */
+        }
+
+        .game-table {
+            width: 800px;
+            height: 800px;
+            background-color: #8b4513; /* 갈색 원형 탁자 */
+            border-radius: 50%;
+            border: 15px solid #5c2e0b;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 0 60px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .center-area {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cash-pile {
+            font-size: 5rem;
+            position: absolute;
+            z-index: 1; /* 종 아래에 위치 */
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5));
+            transform: scale(1.3) rotate(-5deg);
+        }
+
+        .bell-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 2; /* 현금 다발 위에 위치 */
+            padding: 0;
+            margin: 0;
+            outline: none;
+            position: relative;
+            width: 140px;
+            height: 140px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6));
+            transition: transform 0.05s ease, filter 0.05s ease;
+        }
+
+        .bell-base {
+            width: 140px;
+            height: 140px;
+            background: #111;
+            border-radius: 50%;
+            position: absolute;
+            z-index: 1;
+            box-shadow: inset 0 0 15px rgba(0,0,0,1);
+            border: 3px solid #000;
+        }
+
+        .bell-dome {
+            width: 110px;
+            height: 110px;
+            /* 위에서 빛을 받는 느낌의 동심원 형태 그라데이션 */
+            background: radial-gradient(circle at 40% 40%, #ffffff 0%, #d4dbdf 20%, #9ca5af 60%, #4a5463 100%);
+            border-radius: 50%;
+            position: absolute;
+            z-index: 2;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.8), inset -5px -5px 15px rgba(0,0,0,0.5);
+        }
+
+        .bell-top-btn {
+            width: 35px;
+            height: 35px;
+            background: radial-gradient(circle at 40% 40%, #555 0%, #222 50%, #000 100%);
+            border-radius: 50%;
+            position: absolute;
+            z-index: 3;
+            box-shadow: 0 5px 8px rgba(0,0,0,0.7);
+            transition: transform 0.05s ease, box-shadow 0.05s ease;
+        }
+
+        /* 위에서 내려다보는 시점이므로 누를 때 버튼이 살짝 작아지는 느낌으로 처리 */
+        .bell-btn:active .bell-top-btn {
+            transform: scale(0.85);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.9);
+        }
+        
+        .bell-btn:active {
+            filter: drop-shadow(0 8px 8px rgba(0,0,0,0.7));
+            transform: scale(0.97); /* 전체적으로 꾹 눌리는 느낌 */
+        }
+
+        .deck {
+            width: 100px;
+            height: 140px;
+            background-color: white;
+            border-radius: 8px;
+            position: absolute;
+            box-shadow: -1px -1px 0 #ddd, -2px -2px 0 #fff, -3px -3px 0 #ddd, -4px -4px 0 #fff, -5px -5px 0 #ddd, 0 15px 20px rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 12시 방향 상대 덱 */
+        .opponent-deck {
+            top: 50px;
+            left: calc(50% - 120px); /* 덱을 왼쪽 편에 비치 */
+        }
+
+        /* 6시 방향 내 덱 */
+        .player-deck {
+            bottom: 50px;
+            left: calc(50% + 20px); /* 덱을 오른쪽 편에 비치 */
+        }
+
+        .card-back {
+            width: 86%;
+            height: 90%;
+            background: repeating-linear-gradient(
+                45deg,
+                #be123c,
+                #be123c 10px,
+                #ffffff 10px,
+                #ffffff 20px
+            );
+            border-radius: 5px;
+            border: 2px solid white;
+            box-sizing: border-box;
+        }
+
+        /* ---------------------------------
+           플레이된 카드 및 시스템 스타일
+        --------------------------------- */
+        .played-pile {
+            width: 100px;
+            height: 140px;
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .opponent-pile { 
+            top: 50px; 
+            left: calc(50% + 20px); /* 상대 카드는 오른쪽 편에 펼쳐짐 */
+        }
+        .player-pile { 
+            bottom: 50px; 
+            left: calc(50% - 120px); /* 내 카드는 왼쪽 편에 펼쳐짐 */
+        }
+
+        .card-front {
+            width: 100px;
+            height: 140px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: center;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+            position: absolute; 
+            font-size: 1.6rem;
+            line-height: 1;
+            border: 1px solid #ddd;
+            overflow: hidden;
+            gap: 2px;
+        }
+
+        .my-turn {
+            box-shadow: 0 0 25px #facc15, -1px -1px 0 #ddd, -2px -2px 0 #fff, -3px -3px 0 #ddd, -4px -4px 0 #fff, -5px -5px 0 #ddd !important;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .my-turn:hover {
+            transform: translateY(-10px);
+        }
+
+        .deck-count {
+            position: absolute;
+            color: white;
+            font-weight: bold;
+            font-size: 1.5rem;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+        }
+        .opponent-deck .deck-count { top: -40px; }
+        .player-deck .deck-count { bottom: -40px; }
+        
+        #game-msg {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3rem;
+            color: white;
+            font-weight: 900;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.8);
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .show-msg { opacity: 1 !important; }
+    </style>
+</head>
+
+<body>
+    <!-- 카드 떨어지는 이펙트 배경 컨테이너 -->
+    <div id="card-container"></div>
+    
+    <div class="menu-container">
+        <h1 class="game-title">할리갈리</h1>
+        
+        <div class="difficulty-section">
+            <h3 class="difficulty-title">난이도 선택</h3>
+            <div class="diff-options">
+                <button class="diff-btn" data-diff="쌉하남자">쌉하남자</button>
+                <button class="diff-btn" data-diff="하남자">하남자</button>
+                <button class="diff-btn selected" data-diff="일반인">일반인</button>
+                <button class="diff-btn" data-diff="상남자">상남자</button>
+                <button class="diff-btn" data-diff="미1친놈">미1친놈</button>
+            </div>
+        </div>
+
+        <button class="start-btn">START</button>
+    </div>
+
+    <!-- -----------------------------------------------------------------
+         실제 게임 표출 영역
+    ------------------------------------------------------------------ -->
+    <div id="game-screen">
+        <div class="game-table">
+            <!-- 12시 방향: 상대 덱 -->
+            <div class="opponent-deck deck" id="opponent-deck-container">
+                <div class="card-back"></div>
+                <div class="deck-count" id="opponent-deck-count">0</div>
+            </div>
+            
+            <!-- 상대가 낸 카드 -->
+            <div class="played-pile opponent-pile" id="opponent-pile"></div>
+            
+            <!-- 정중앙: 종과 현금 다발 -->
+            <div class="center-area">
+                <div class="cash-pile">
+                    <span style="position:absolute; display:inline-block; transform: translate(-65px, -50px) rotate(-15deg);">💵</span>
+                    <span style="position:absolute; display:inline-block; transform: translate(45px, -60px) rotate(25deg);">💵</span>
+                    <span style="position:absolute; display:inline-block; transform: translate(-75px, 20px) rotate(-35deg);">💵</span>
+                    <span style="position:absolute; display:inline-block; transform: translate(60px, 30px) rotate(40deg);">💵</span>
+                    <span style="position:absolute; display:inline-block; transform: translate(-10px, 65px) rotate(-5deg);">💵</span>
+                </div>
+                <!-- 실제 할리갈리 종 모양 구현 (순수 CSS) -->
+                <button class="bell-btn" id="bell">
+                    <div class="bell-top-btn"></div>
+                    <div class="bell-dome"></div>
+                    <div class="bell-base"></div>
+                </button>
+            </div>
+
+            <!-- 6시 방향: 내가 낸 카드 -->
+            <div class="played-pile player-pile" id="player-pile"></div>
+
+            <!-- 내 덱 -->
+            <div class="player-deck deck" id="player-deck-container">
+                <div class="card-back"></div>
+                <div class="deck-count" id="player-deck-count">0</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 시스템 메시지(승패/획득 등) -->
+    <div id="game-msg"></div>
+
+    <!-- 결과 화면 -->
+    <div id="result-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; flex-direction: column;">
+        <div id="result-text" style="font-size: 20rem; font-weight: 900; color: #ef4444; text-shadow: 0 0 20px rgba(0,0,0,0.5);">ㅋ</div>
+        <div id="result-subtext" style="font-size: 2rem; margin-top: 20px; color: white;">패배하셨습니다.</div>
+        <button id="restart-btn" style="margin-top: 50px; padding: 15px 40px; font-size: 1.5rem; cursor: pointer; background: white; color: black; border: none; border-radius: 10px; font-weight: bold;">다시하기</button>
+    </div>
+
+    <script>
+        const diffBtns = document.querySelectorAll('.diff-btn');
+        let currentDifficulty = '일반인';
+
+        diffBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove selected class from all buttons
+                diffBtns.forEach(b => b.classList.remove('selected'));
+                // Add selected class to the clicked button
+                btn.classList.add('selected');
+                // Update current difficulty
+                currentDifficulty = btn.getAttribute('data-diff');
+            });
+        });
+
+        // ------------------ 게임 로직 ------------------
+        let playerDeck = [];
+        let opponentDeck = [];
+        let playerPile = [];
+        let opponentPile = [];
+        let currentTurn = 'player'; // 선공
+        
+        const cardFruits = ['🍓', '🍌', '🍏', '🍇'];
+        let aiTimer = null;
+        let aiBellTimer = null;
+
+        function showMsg(text) {
+            const msgEl = document.getElementById('game-msg');
+            msgEl.innerText = text;
+            msgEl.classList.add('show-msg');
+            setTimeout(() => {
+                msgEl.classList.remove('show-msg');
+            }, 1000);
+        }
+
+        function initGame() {
+            let fullDeck = [];
+            // 과일 4종 별 14장씩 56장 생성
+            cardFruits.forEach(fruit => {
+                for(let i=0; i<5; i++) fullDeck.push({ fruit, count: 1 });
+                for(let i=0; i<3; i++) fullDeck.push({ fruit, count: 2 });
+                for(let i=0; i<3; i++) fullDeck.push({ fruit, count: 3 });
+                for(let i=0; i<2; i++) fullDeck.push({ fruit, count: 4 });
+                for(let i=0; i<1; i++) fullDeck.push({ fruit, count: 5 });
+            });
+
+            // 피셔-예이츠 셔플
+            for (let i = fullDeck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [fullDeck[i], fullDeck[j]] = [fullDeck[j], fullDeck[i]];
+            }
+
+            playerDeck = fullDeck.slice(0, 28);
+            opponentDeck = fullDeck.slice(28, 56);
+            playerPile = [];
+            opponentPile = [];
+            currentTurn = 'player';
+
+            updateUI();
+        }
+
+        function renderPile(pileArray, elementId) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            if (pileArray.length > 0) {
+                const topCard = pileArray[pileArray.length - 1]; 
+                const cardFront = document.createElement('div');
+                cardFront.className = 'card-front';
+                // 살짝 회전시킴
+                cardFront.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
+                
+                let html = '';
+                for(let i=0; i<topCard.count; i++) html += `<span class="card-fruit">${topCard.fruit}</span>`;
+                cardFront.innerHTML = html;
+                container.appendChild(cardFront);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('player-deck-count').innerText = playerDeck.length;
+            document.getElementById('opponent-deck-count').innerText = opponentDeck.length;
+
+            renderPile(playerPile, 'player-pile');
+            renderPile(opponentPile, 'opponent-pile');
+
+            const pDeckContainer = document.getElementById('player-deck-container');
+            if (currentTurn === 'player' && playerDeck.length > 0) {
+                pDeckContainer.classList.add('my-turn');
+            } else {
+                pDeckContainer.classList.remove('my-turn');
+            }
+
+            if (playerDeck.length === 0 && currentTurn === 'player') {
+                showResultScreen('defeat');
+                return;
+            }
+            if (opponentDeck.length === 0 && currentTurn === 'opponent') {
+                showResultScreen('win');
+                return;
+            }
+        }
+
+        function showResultScreen(result) {
+            const screen = document.getElementById('result-screen');
+            const mainText = document.getElementById('result-text');
+            const subText = document.getElementById('result-subtext');
+            
+            if (result === 'defeat') {
+                mainText.innerText = 'ㅋ';
+                mainText.style.color = '#ef4444';
+                subText.innerText = '패배하셨습니다. (내 카드 모두 소진)';
+            } else {
+                mainText.innerText = '승리!';
+                mainText.style.color = '#10b981';
+                subText.innerText = '상대방 카드를 모두 털었습니다.';
+            }
+            screen.style.display = 'flex';
+        }
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            document.getElementById('result-screen').style.display = 'none';
+            initGame();
+        });
+
+        function checkFruitCount() {
+            let counts = { '🍓': 0, '🍌': 0, '🍏': 0, '🍇': 0 };
+            if (playerPile.length > 0) {
+                let pTop = playerPile[playerPile.length - 1];
+                counts[pTop.fruit] += pTop.count;
+            }
+            if (opponentPile.length > 0) {
+                let oTop = opponentPile[opponentPile.length - 1];
+                counts[oTop.fruit] += oTop.count;
+            }
+            return Object.values(counts).includes(5);
+        }
+
+        function playCard(who) {
+            if (who === 'player') {
+                if (playerDeck.length === 0) return;
+                playerPile.push(playerDeck.pop());
+                currentTurn = 'opponent';
+            } else {
+                if (opponentDeck.length === 0) return;
+                opponentPile.push(opponentDeck.pop());
+                currentTurn = 'player';
+            }
+            updateUI();
+            checkAndScheduleAIBell();
+
+            if (currentTurn === 'opponent') {
+                scheduleAIPlay();
+            }
+        }
+
+        function scheduleAIPlay() {
+            clearTimeout(aiTimer);
+            if (opponentDeck.length > 0) {
+                // 카드를 내는 간격 (약 0.8초 ~ 1.2초 무작위 지연)
+                const delay = 800 + Math.random() * 400;
+                aiTimer = setTimeout(() => {
+                    playCard('opponent');
+                }, delay);
+            }
+        }
+
+        const diffMap = {
+            '쌉하남자': [1500, 2000],
+            '하남자': [1000, 1500],
+            '일반인': [600, 1000],
+            '상남자': [400, 600],
+            '미1친놈': [200, 400]
+        };
+
+        function checkAndScheduleAIBell() {
+            clearTimeout(aiBellTimer);
+            if (checkFruitCount()) {
+                const range = diffMap[currentDifficulty] || [600, 1000];
+                const reactionTime = range[0] + Math.random() * (range[1] - range[0]);
+                aiBellTimer = setTimeout(() => {
+                    handleBellRing('opponent');
+                }, reactionTime);
+            }
+        }
+
+        document.getElementById('player-deck-container').addEventListener('click', () => {
+            if (currentTurn === 'player') {
+                playCard('player');
+            }
+        });
+
+        function handleBellRing(who) {
+            clearTimeout(aiBellTimer); 
+            playBellSound();
+            
+            if (checkFruitCount()) {
+                showMsg(who === 'player' ? '성공! 카드 획득' : '아앗! 뺏겼습니다');
+                
+                let allCards = [...opponentPile, ...playerPile];
+                if (who === 'player') {
+                    playerDeck.unshift(...allCards);
+                } else {
+                    opponentDeck.unshift(...allCards);
+                }
+                playerPile = [];
+                opponentPile = [];
+                currentTurn = who; 
+                
+                updateUI();
+                
+                if (who === 'opponent') {
+                    scheduleAIPlay();
+                }
+            } else {
+                showMsg(who === 'player' ? '실수! 패널티' : '상대 실수!');
+                if (who === 'player') {
+                    if (playerDeck.length > 0) opponentDeck.unshift(playerDeck.pop());
+                } else {
+                    if (opponentDeck.length > 0) playerDeck.unshift(opponentDeck.pop());
+                }
+                updateUI();
+            }
+        }
+
+        document.getElementById('bell').addEventListener('click', () => {
+            handleBellRing('player');
+        });
+
+        document.querySelector('.start-btn').addEventListener('click', () => {
+            document.querySelector('.menu-container').style.display = 'none';
+            document.getElementById('card-container').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'flex';
+            
+            initGame();
+        });
+
+        const AudioContextObj = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function playBellSound() {
+            if (!audioCtx) audioCtx = new AudioContextObj();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(1400, audioCtx.currentTime);
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(2800, audioCtx.currentTime);
+
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.7);
+
+            osc1.connect(gainNode);
+            osc2.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc1.start();
+            osc2.start();
+            osc1.stop(audioCtx.currentTime + 0.7);
+            osc2.stop(audioCtx.currentTime + 0.7);
+        }
+
+        // ----------------------------------------------------
+        // 할리갈리 실제 카드 떨어지는 애니메이션 스크립트
+        // ----------------------------------------------------
+        const fruits = ['🍓', '🍌', '🍏', '🍇'];
+        
+        function createFallingCard() {
+            const container = document.getElementById('card-container');
+            if (!container) return;
+
+            const card = document.createElement('div');
+            card.classList.add('falling-card');
+
+            // 랜덤 과일(딸기, 바나나, 사과, 포도)과 갯수 (1~5)
+            const fruit = fruits[Math.floor(Math.random() * fruits.length)];
+            const count = Math.floor(Math.random() * 5) + 1;
+            
+            let innerHtml = '<div class="falling-card-inner">';
+            for(let i=0; i<count; i++) {
+                innerHtml += fruit;
+            }
+            innerHtml += '</div>';
+            card.innerHTML = innerHtml;
+
+            // 랜덤하게 떨어지는 위치, 크기, 회전 속성 생성
+            const left = Math.random() * 95; // 0 ~ 95vw
+            const duration = Math.random() * 5 + 4; // 4초 ~ 9초에 걸쳐 떨어짐
+            const startRot = Math.random() * 360;
+            const endRot = startRot + (Math.random() * 720 - 360); // 랜덤하게 회전하며 떨어짐
+            
+            const scale = Math.random() * 0.6 + 0.6; // 0.6배 ~ 1.2배 크기 조절
+            const cardWidth = 70 * scale;
+            const cardHeight = 100 * scale;
+            const fontSize = 20 * scale;
+
+            // CSS 스타일 변수 할당
+            card.style.left = `${left}vw`;
+            card.style.width = `${cardWidth}px`;
+            card.style.height = `${cardHeight}px`;
+            card.style.fontSize = `${fontSize}px`;
+            card.style.animationDuration = `${duration}s`;
+            card.style.setProperty('--start-rot', `${startRot}deg`);
+            card.style.setProperty('--end-rot', `${endRot}deg`);
+            
+            // 약간 깊이감을 위한 z-index 배치
+            card.style.zIndex = Math.floor(Math.random() * -10);
+
+            container.appendChild(card);
+
+            // 떨어지는 애니메이션 종료 후 DOM 노드 삭제하여 과부하 방지
+            setTimeout(() => {
+                card.remove();
+            }, duration * 1000);
+        }
+
+        // 0.5초(500ms)마다 새로운 카드 떨어짐
+        setInterval(createFallingCard, 500);
+        
+        // 처음 접속 시 화면에 빈 공간이 없도록 바로 카드를 몇 개 연속으로 내려오게 함
+        for(let j=0; j<8; j++) {
+            setTimeout(() => {
+                createFallingCard();
+            }, j * 250);
+        }
+    </script>
+</body>
+
+</html>
