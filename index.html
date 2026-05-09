@@ -146,6 +146,7 @@
             padding: 5px;
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            position: relative;
         }
 
         .profile-image {
@@ -154,6 +155,18 @@
             border-radius: 50%;
             object-fit: cover;
             border: 4px solid #1e1e1e;
+            box-sizing: border-box;
+        }
+
+        #scratch-canvas {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            cursor: crosshair;
+            z-index: 2;
         }
 
         #profile-screen h1 {
@@ -315,6 +328,24 @@
 
 <body>
 
+    <!-- 함정카드 화면 -->
+    <div id="trap-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; justify-content:center; align-items:center; color:white; text-align:center;">
+        <h1 id="trap-title" style="font-size: 50px; color: #ff0000; text-shadow: 0 0 20px #ff0000; animation: shake 0.5s infinite; margin-bottom: 30px;">함정카드 발동!</h1>
+        <div id="quiz-container" style="display:none; background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; width: 80%; max-width: 400px; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <h2 id="quiz-progress" style="margin-top:0; color:#4facfe; font-size: 18px;">질문 1 / 15</h2>
+            <p id="quiz-question" style="font-size: 20px; margin: 20px 0; font-weight: bold;">질문 내용</p>
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
+                <button id="quiz-btn-yes" style="padding: 12px 30px; border:none; border-radius: 8px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color:white; font-size:16px; font-weight:bold; cursor:pointer; flex: 1; box-shadow: 0 4px 15px rgba(79,172,254,0.4);">예</button>
+                <button id="quiz-btn-no" style="padding: 12px 30px; border:none; border-radius: 8px; background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); color:white; font-size:16px; font-weight:bold; cursor:pointer; flex: 1; box-shadow: 0 4px 15px rgba(255,8,68,0.4);">아니오</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 공습경보 화면 -->
+    <div id="air-raid-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,0,0,0.9); z-index:10000; flex-direction:column; justify-content:center; align-items:center; color:white; text-align:center;">
+        <h1 style="font-size: 80px; color: #fff; font-weight: 900; text-shadow: 0 0 30px #000; animation: shake 0.2s infinite;">공습경보!!!</h1>
+    </div>
+
     <!-- 깜놀 화면 -->
     <div id="jumpscare-screen">
         <img src="깜놀주의.png" alt="깜놀" class="jumpscare-img"
@@ -338,8 +369,9 @@
             <!-- 현재는 기본적으로 보여지도록 설정되어 있습니다 -->
             <img src="profile.png" alt="내 프로필 이미지" class="profile-image" id="user-image"
                 onerror="this.src='https://via.placeholder.com/150/2d2d2d/4facfe?text=Image'">
+            <canvas id="scratch-canvas" width="160" height="160"></canvas>
         </div>
-        <h1>안녕하세요!</h1>
+        <h1>안녕하시긔~!</h1>
         <p class="bio">이곳은 저를 소개하는 프라이빗 프로필 공간입니다. 방문해주셔서 감사합니다.</p>
 
         <div class="info-grid">
@@ -377,7 +409,7 @@
             const pwdScreen = document.getElementById('password-screen');
             const profileScreen = document.getElementById('profile-screen');
 
-            if (input === '6974') {
+            if (input === '0000') {
                 // 비번 맞춤 -> 깜놀 액션 시작
                 pwdScreen.style.display = 'none';
                 errorMsg.style.display = 'none';
@@ -423,9 +455,226 @@
             }
         }
 
-        // 페이지 로드 시 인풋란 포커스
+        // 페이지 로드 시 잠금 상태 확인
+        let pwdLockInterval;
         window.onload = () => {
-            document.getElementById('pwd-input').focus();
+            if (sessionStorage.getItem('profileUnlocked') === 'true') {
+                document.getElementById('password-screen').style.display = 'none';
+                const profileScreen = document.getElementById('profile-screen');
+                profileScreen.style.display = 'block';
+                profileScreen.style.opacity = '1';
+                profileScreen.style.transform = 'translateY(0)';
+                document.getElementById('user-image').src = 'profile2.png';
+                const canvas = document.getElementById('scratch-canvas');
+                if (canvas) canvas.style.display = 'none';
+                return;
+            }
+            checkLockStatus();
+            initScratch();
+        }
+
+        function checkLockStatus() {
+            const lockUntil = localStorage.getItem('pwdLock');
+            if (lockUntil) {
+                const now = new Date().getTime();
+                if (now < lockUntil) {
+                    lockUI(lockUntil);
+                } else {
+                    localStorage.removeItem('pwdLock');
+                    document.getElementById('pwd-input').disabled = false;
+                    document.getElementById('pwd-input').focus();
+                }
+            } else {
+                document.getElementById('pwd-input').focus();
+            }
+        }
+
+        function lockUI(lockUntil) {
+            const input = document.getElementById('pwd-input');
+            input.disabled = true;
+            input.value = '';
+            
+            const errorMsg = document.getElementById('error-msg');
+            errorMsg.style.display = 'block';
+            errorMsg.style.color = '#ff9800';
+
+            pwdLockInterval = setInterval(() => {
+                const now = new Date().getTime();
+                const distance = lockUntil - now;
+
+                if (distance <= 0) {
+                    clearInterval(pwdLockInterval);
+                    localStorage.removeItem('pwdLock');
+                    input.disabled = false;
+                    errorMsg.style.display = 'none';
+                    errorMsg.style.color = '#ff5252';
+                    errorMsg.innerText = '비밀번호가 일치하지 않습니다.';
+                    input.focus();
+                } else {
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    errorMsg.innerText = `잠금 상태: ${minutes}분 ${seconds}초 후 해제`;
+                }
+            }, 1000);
+        }
+
+        function initScratch() {
+            const canvas = document.getElementById('scratch-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#a0a0a0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.font = 'bold 20px Noto Sans KR';
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('동전으로 긁기!', canvas.width / 2, canvas.height / 2);
+            
+            let isDrawing = false;
+            
+            function getMousePos(canvas, evt) {
+                const rect = canvas.getBoundingClientRect();
+                let clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+                let clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                
+                return {
+                    x: (clientX - rect.left) * scaleX,
+                    y: (clientY - rect.top) * scaleY
+                };
+            }
+            
+            function startDrawing(e) {
+                isDrawing = true;
+                scratch(e);
+            }
+            
+            function stopDrawing() {
+                isDrawing = false;
+                checkScratchComplete();
+            }
+            
+            function scratch(e) {
+                if (!isDrawing) return;
+                if (e.cancelable) e.preventDefault();
+                
+                const pos = getMousePos(canvas, e);
+                
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            let trapTriggered = false;
+            const quizQuestions = [];
+            for (let i = 1; i <= 14; i++) {
+                quizQuestions.push(i + ". 당신은 로봇입니까?");
+            }
+            quizQuestions.push("15. 당신은 로봇이 아닙니까?");
+            let currentQuestionIndex = 0;
+
+            function checkScratchComplete() {
+                if (trapTriggered) return;
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const pixels = imageData.data;
+                let transparentPixels = 0;
+                
+                for (let i = 3; i < pixels.length; i += 4) {
+                    if (pixels[i] === 0) transparentPixels++;
+                }
+                
+                if ((transparentPixels / (pixels.length / 4)) * 100 > 50) {
+                    trapTriggered = true;
+                    canvas.style.display = 'none';
+                    triggerTrapCard();
+                }
+            }
+
+            function triggerTrapCard() {
+                const trapScreen = document.getElementById('trap-screen');
+                trapScreen.style.display = 'flex';
+                
+                setTimeout(() => {
+                    document.getElementById('trap-title').style.animation = 'none';
+                    document.getElementById('trap-title').style.fontSize = '24px';
+                    document.getElementById('trap-title').innerText = "프로필을 보려면 15개의 질문에 답하세요";
+                    document.getElementById('trap-title').style.textShadow = 'none';
+                    document.getElementById('trap-title').style.color = '#ffffff';
+                    document.getElementById('quiz-container').style.display = 'block';
+                    showQuestion();
+                }, 2500);
+            }
+
+            function showQuestion() {
+                if (currentQuestionIndex >= 15) {
+                    finishQuiz();
+                    return;
+                }
+                document.getElementById('quiz-progress').innerText = `질문 ${currentQuestionIndex + 1} / 15`;
+                document.getElementById('quiz-question').innerText = quizQuestions[currentQuestionIndex];
+            }
+
+            function failQuiz() {
+                const airRaid = document.getElementById('air-raid-screen');
+                airRaid.style.display = 'flex';
+                
+                try {
+                    const siren = new Audio('siren.mp3');
+                    siren.loop = true;
+                    siren.play();
+                    
+                    setTimeout(() => {
+                        siren.pause();
+                        triggerLock();
+                    }, 5000); // 5초간 사이렌 울린 뒤 잠금
+                } catch(e) {
+                    setTimeout(triggerLock, 5000);
+                }
+            }
+
+            function triggerLock() {
+                const lockUntil = new Date().getTime() + 5 * 60 * 1000;
+                localStorage.setItem('pwdLock', lockUntil);
+                window.location.reload(); // 리로드하여 초기 화면 및 잠금 상태로 진입
+            }
+
+            function handleAnswer(isYes) {
+                if (currentQuestionIndex < 14) {
+                    if (isYes) {
+                        failQuiz();
+                        return;
+                    }
+                } else {
+                    if (!isYes) {
+                        failQuiz();
+                        return;
+                    }
+                }
+                
+                currentQuestionIndex++;
+                showQuestion();
+            }
+
+            document.getElementById('quiz-btn-yes').addEventListener('click', () => handleAnswer(true));
+            document.getElementById('quiz-btn-no').addEventListener('click', () => handleAnswer(false));
+
+            function finishQuiz() {
+                document.getElementById('trap-screen').style.display = 'none';
+                document.getElementById('user-image').src = 'profile2.png';
+                sessionStorage.setItem('profileUnlocked', 'true');
+            }
+            
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', scratch);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+            canvas.addEventListener('touchstart', startDrawing, {passive: false});
+            canvas.addEventListener('touchmove', scratch, {passive: false});
+            canvas.addEventListener('touchend', stopDrawing);
+            canvas.addEventListener('touchcancel', stopDrawing);
         }
     </script>
 </body>
