@@ -1,0 +1,4 @@
+const API_KEYS = {
+    GEMINI_API_KEY: "AIzaSyB8tbyyt4tXuYsaTzWNQTM6Cxh5KBaBfvU",
+    DATA_GO_KR_API_KEY: "YOUR_DATA_GO_KR_API_KEY_HERE"
+};
